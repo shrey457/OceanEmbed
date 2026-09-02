@@ -67,7 +67,7 @@ To solve the actual problem statement, you need to download historical data from
    - Create a free account at [Copernicus Marine Service](https://marine.copernicus.eu/).
    - Create a free account at [NASA Earthdata](https://urs.earthdata.nasa.gov/).
 2. **Configure your Credentials**:
-   - Duplicate the `.env.example` file and rename it to exactly `.env`.
+   - Duplicate the `env.txt` file and rename it to exactly `.env`.
    - Open `.env` and fill in your usernames and passwords.
 3. **Download the Data**:
    ```bash
