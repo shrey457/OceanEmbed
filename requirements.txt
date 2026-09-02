@@ -1,0 +1,15 @@
+numpy
+pandas
+xarray
+dask
+netCDF4
+h5netcdf
+torch
+torchvision
+scikit-learn
+matplotlib
+tqdm
+pyyaml
+copernicusmarine
+earthaccess
+python-dotenv
