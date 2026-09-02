@@ -67,7 +67,7 @@ To solve the actual problem statement, you need to download historical data from
    - Create a free account at [Copernicus Marine Service](https://marine.copernicus.eu/).
    - Create a free account at [NASA Earthdata](https://urs.earthdata.nasa.gov/).
 2. **Configure your Credentials**:
-   - Duplicate the `env.txt` file and rename it to exactly `.env`.
+   - Duplicate the `.env.example` file and rename it to exactly `.env`.
    - Open `.env` and fill in your usernames and passwords.
 3. **Download the Data**:
    ```bash
@@ -90,6 +90,16 @@ To show the judges exactly what your Deep Learning model is doing, run the infer
 python notebooks/demo_inference.py
 ```
 This will generate `results/ocean_embed_inference.png`. Show this image during your pitch!
+
+### 🧠 Making the Model "Smart": Spatial & Temporal Awareness
+
+If you pass basic data into a standard Convolutional Neural Network (CNN), the model is "blind" to space and time. It only looks at the colors of local pixels. However, in Earth Science, *where* you are (Latitude) and *when* it is (Season) completely changes how the ocean behaves!
+
+To make OceanEmbed truly **smart**, our PyTorch Dataset automatically performs advanced feature engineering to add 4 new input channels on the fly:
+1. **Spatial Awareness (CoordConv)**: We pass the exact **Latitude** and **Longitude** of every pixel into the CNN as a normalized grid. This allows the model to learn that physical rules change based on location (e.g., the Coriolis force driving ocean currents is zero at the equator but strong in the north).
+2. **Temporal Awareness (Seasonality)**: We calculate the **Day of the Year** and convert it into continuous Sine and Cosine waves. This gives the CNN a cyclical "clock", allowing it to instantly know whether it is looking at the ocean during the Summer Monsoon or the Winter Cooling period.
+
+These 4 channels are dynamically stacked with the 7 satellite variables, feeding a mathematically robust 11-channel tensor into the GPU.
 
 ### 💡 Data Strategy: Why train on 2023 Data instead of 2026?
 
