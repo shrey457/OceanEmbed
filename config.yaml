@@ -15,7 +15,7 @@ data:
   processed_dir: "data/processed"
   
 model:
-  in_channels: 7  # SST, SSS, SSH, U_curr, V_curr, U_wind, V_wind
+  in_channels: 11  # SST, SSS, SSH, U_curr, V_curr, U_wind, V_wind + Lat, Lon, Sin(Day), Cos(Day)
   out_channels: 15 # Output depths
   
 training:

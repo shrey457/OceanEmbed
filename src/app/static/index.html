@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OceanEmbed | Live 3D Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Plotly.js for premium interactive heatmaps -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar Controls -->
+        <aside class="sidebar glass-panel">
+            <div class="logo">
+                <h1>OceanEmbed</h1>
+                <p>Subsurface Reconstruction</p>
+            </div>
+            
+            <div class="control-group">
+                <label for="day-slider">Time: <span id="day-val">Day 1</span></label>
+                <input type="range" id="day-slider" min="0" max="0" value="0" class="slider glow">
+                <button id="load-btn" class="btn primary-btn">Load Data</button>
+            </div>
+
+            <div class="control-group">
+                <label for="depth-slider">Dive Depth: <span id="depth-val">0m</span></label>
+                <input type="range" id="depth-slider" min="0" max="14" value="0" class="slider dive-slider" disabled>
+            </div>
+
+            <div class="metrics glass-panel sub-panel">
+                <h3>Depth Analysis</h3>
+                <div class="metric">
+                    <span>True Mean Temp:</span>
+                    <strong id="true-mean">-</strong>
+                </div>
+                <div class="metric">
+                    <span>Pred Mean Temp:</span>
+                    <strong id="pred-mean">-</strong>
+                </div>
+                <div class="metric">
+                    <span>Absolute Error:</span>
+                    <strong id="abs-error" class="highlight">-</strong>
+                </div>
+            </div>
+            
+            <div class="loading-overlay" id="loading">
+                <div class="spinner"></div>
+                <p>Loading Ocean Physics...</p>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="workspace">
+            <div class="maps-container">
+                <div class="map-card glass-panel">
+                    <h2>Ground Truth (GLORYS)</h2>
+                    <div id="true-map" class="plot-area"></div>
+                </div>
+                <div class="map-card glass-panel">
+                    <h2>OceanEmbed AI</h2>
+                    <div id="pred-map" class="plot-area"></div>
+                </div>
+                <div class="map-card glass-panel error-card">
+                    <h2>Error Delta</h2>
+                    <div id="error-map" class="plot-area"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

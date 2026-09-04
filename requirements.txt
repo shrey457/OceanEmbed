@@ -13,3 +13,5 @@ pyyaml
 copernicusmarine
 earthaccess
 python-dotenv
+fastapi
+uvicorn

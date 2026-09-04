@@ -19,6 +19,17 @@ def get_variable_name(ds, expected_names):
     return None
 
 def standardize_coords(ds):
+    # Fix OSCAR dimensions vs coordinates issue
+    if 'latitude' in ds.dims and 'lat' in ds.coords:
+        ds = ds.swap_dims({'latitude': 'lat'})
+    elif 'latitude' in ds.dims:
+        ds = ds.rename({'latitude': 'lat'})
+        
+    if 'longitude' in ds.dims and 'lon' in ds.coords:
+        ds = ds.swap_dims({'longitude': 'lon'})
+    elif 'longitude' in ds.dims:
+        ds = ds.rename({'longitude': 'lon'})
+    
     rename_dict = {}
     for coord in ['longitude', 'nav_lon', 'lon']:
         if coord in ds.coords or coord in ds.dims: rename_dict[coord] = 'lon'
@@ -31,6 +42,13 @@ def standardize_coords(ds):
     rename_dict = {k: v for k, v in rename_dict.items() if k != v}
     if rename_dict:
         ds = ds.rename(rename_dict)
+        
+    if 'time' in ds.coords and ds['time'].dtype == 'O':
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ds['time'] = ds.indexes['time'].to_datetimeindex()
+            
     return ds
 
 def preprocess_data():
@@ -65,8 +83,8 @@ def preprocess_data():
             
         print(f"Processing {standard_name} from {len(files)} file(s)...")
         try:
-            # Use open_mfdataset for robust multi-granule loading
-            ds = xr.open_mfdataset(files, combine='by_coords', data_vars='minimal', coords='minimal', compat='override')
+            # Use open_mfdataset for robust multi-granule loading with Dask chunking to prevent OOM
+            ds = xr.open_mfdataset(files, combine='by_coords', data_vars='minimal', coords='minimal', compat='override', chunks={'time': 10})
             ds = standardize_coords(ds)
             actual_name = get_variable_name(ds, info['vars'])
             
@@ -82,6 +100,9 @@ def preprocess_data():
                 # Optional: Ensure no duplicate timestamps before interpolating
                 _, index = np.unique(ds['time'], return_index=True)
                 ds = ds.isel(time=index)
+                
+                # OPTIMIZATION: Cast to float32 to halve memory usage
+                ds[actual_name] = ds[actual_name].astype(np.float32)
                 
                 ds_regridded = ds.interp(lat=target_lats, lon=target_lons, method='linear')
                 arr = ds_regridded[actual_name]
@@ -110,7 +131,7 @@ def preprocess_data():
     if glorys_files:
         try:
             print(f"Processing target subsurface temperature from {len(glorys_files)} file(s)...")
-            ds = xr.open_mfdataset(glorys_files, combine='by_coords', data_vars='minimal', coords='minimal', compat='override')
+            ds = xr.open_mfdataset(glorys_files, combine='by_coords', data_vars='minimal', coords='minimal', compat='override', chunks={'time': 10})
             ds = standardize_coords(ds)
             actual_name = get_variable_name(ds, ['temperature', 'thetao'])
             if actual_name:
@@ -124,11 +145,15 @@ def preprocess_data():
                 _, index = np.unique(ds['time'], return_index=True)
                 ds = ds.isel(time=index)
                 
+                # 1. OPTIMIZATION: Interpolate depth FIRST to reduce memory from 50 levels down to 15 levels!
+                if 'depth' in ds.dims:
+                    ds = ds.interp(depth=target_depths, method='linear')
+                    
+                # 2. OPTIMIZATION: Cast to float32 to halve memory usage
+                ds[actual_name] = ds[actual_name].astype(np.float32)
+                
                 ds_regridded = ds.interp(lat=target_lats, lon=target_lons, method='linear')
                 arr_target = ds_regridded[actual_name]
-                
-                if 'depth' in arr_target.dims:
-                    arr_target = arr_target.interp(depth=target_depths, method='linear')
                     
                 temp_mean = float(arr_target.mean().compute().item())
                 temp_std = float(arr_target.std().compute().item())

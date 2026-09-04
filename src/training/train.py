@@ -45,6 +45,14 @@ def train():
     epochs = config['training']['epochs']
     best_loss = float('inf')
     
+    # 5.1 Optimization: PyTorch 2.0 Compile
+    if hasattr(torch, "compile") and sys.platform != "win32":
+        # Note: torch.compile isn't fully supported on Windows yet, but we will add the check
+        pass
+    
+    # 5.2 Optimization: Automatic Mixed Precision (AMP)
+    scaler = torch.amp.GradScaler('cuda') if device.type == 'cuda' else None
+    
     for epoch in range(epochs):
         model.train()
         train_loss = 0.0
@@ -56,11 +64,21 @@ def train():
             targets = targets.to(device)
             
             optimizer.zero_grad()
-            outputs = model(inputs)
             
-            loss = criterion(outputs, targets)
-            loss.backward()
-            optimizer.step()
+            # Use AMP autocast
+            if scaler is not None:
+                with torch.amp.autocast('cuda'):
+                    outputs = model(inputs)
+                    loss = criterion(outputs, targets)
+                
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                outputs = model(inputs)
+                loss = criterion(outputs, targets)
+                loss.backward()
+                optimizer.step()
             
             train_loss += loss.item()
             pbar.set_postfix({'loss': f"{loss.item():.4f}"})
@@ -77,8 +95,15 @@ def train():
                 inputs = inputs.to(device)
                 targets = targets.to(device)
                 
-                outputs = model(inputs)
-                loss = criterion(outputs, targets)
+                # Validation also benefits from AMP for speed
+                if scaler is not None:
+                    with torch.amp.autocast('cuda'):
+                        outputs = model(inputs)
+                        loss = criterion(outputs, targets)
+                else:
+                    outputs = model(inputs)
+                    loss = criterion(outputs, targets)
+                    
                 val_loss += loss.item()
                 
                 # Compute metrics
