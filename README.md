@@ -56,10 +56,6 @@ OceanEmbed/
 1. **Open your terminal/command prompt** and navigate to this folder.
 2. **Install the required Python packages**:
    ```bash
-   // for ubuntu
-sudo apt install python3-venv python3-full
-python3 -m venv venv
-source venv/bin/activate 
   
    pip install -r requirements.txt
    ```
